@@ -133,22 +133,22 @@ class Trick():
 
     def __init__(self):
         self.initial_card = None
-        self.cards = [None for x in range(4)]
+        self.__cards = [None for x in range(4)]
         pass
 
     def set_player_card(self, player, card):
         """Indicate that the player played card"""
         if self.initial_card is None:
             self.initial_card = card
-        self.cards[player] = card
+        self.__cards[player] = card
 
     def trick_winner(self):
         """Assumes that all players have played a card"""
         follow_suit = self.initial_card.effective_suit
         current_winner = self.initial_card
-        for c in self.cards:
+        for c in self.__cards:
             current_winner = self.max(current_winner, c, follow_suit)
-        return self.cards.index(current_winner)
+        return self.__cards.index(current_winner)
 
     @staticmethod
     def max(c1, c2, suit_led):
@@ -174,7 +174,7 @@ class Trick():
                 return c2
 
     def __str__(self):
-        print str([str(c) for c in self.cards])
+        print str([str(c) for c in self.__cards])
 
 
 class Hand():
@@ -214,21 +214,21 @@ class Hand():
 
 
 class Deck():
-    cards = []
+    __cards = []
 
     def __init__(self):
         for suit in range(4):
             for rank in range(9, 15):
-                self.cards.append(EuchreCard(rank, suit))
-        shuffle(self.cards)
+                self.__cards.append(EuchreCard(rank, suit))
+        shuffle(self.__cards)
 
     def deal(self, num_cards):
         """return num_cards number of cards from the top of the deck"""
-        if num_cards > len(self.cards):
+        if num_cards > len(self.__cards):
             raise RuntimeError("Not enough cards left to deal")
         dealt = []
         for i in range(num_cards):
-            dealt.append(self.cards.pop())
+            dealt.append(self.__cards.pop())
         return dealt
 
 __author__ = 'eric'
