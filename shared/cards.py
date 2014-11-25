@@ -67,7 +67,8 @@ class Card():
 
 
 class EuchreCard(Card):
-    trump_rank_order = [2, 3, 4, 5, 6, 7, 8, 9, 10, "Q", "K", "A", "J"]
+    trump_rank_order = ["2", "3", "4", "5", "6", "7", "8",
+                        "9", "10", "Q", "K", "A", "J"]
 
     def __init__(self, rank, suit):
         Card.__init__(self, rank, suit)
