@@ -177,6 +177,40 @@ class Trick():
         print str([str(c) for c in self.__cards])
 
 
+class Round():
+    """A Round is a sequence of 5 tricks"""
+
+    def __init__(self):
+        self.tricks = [None for x in range(5)]
+
+    def player_tricks(self, player):
+        win_count = 0
+        for trick in self.tricks:
+            if trick is not None and trick.trick_winner() == player:
+                win_count += 1
+        return win_count
+
+    def team_tricks(self, team):
+        return self.player_tricks(team) + self.player_tricks(team + 2)
+
+    def team_score(self, team, called_trump, going_alone=False):
+        tricks_taken = self.team_tricks(team)
+        if called_trump == team:
+            if tricks_taken == 5:
+                if going_alone:
+                    return 4
+                else:
+                    return 2
+            if tricks_taken > 2:
+                return 1
+            else:
+                return 0
+        else:
+            if tricks_taken > 2:
+                return 2
+            return 0
+
+
 class Hand():
 
     def __init__(self):
@@ -214,9 +248,9 @@ class Hand():
 
 
 class Deck():
-    __cards = []
 
     def __init__(self):
+        self.__cards = []
         for suit in range(4):
             for rank in range(9, 15):
                 self.__cards.append(EuchreCard(rank, suit))
