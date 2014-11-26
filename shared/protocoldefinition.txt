@@ -1,0 +1,94 @@
+
+There will be a game lobby, where you type in the name of the game
+you want to join. If a game does not yet exist at that name, a new one
+is created.
+
+All games start by having 4 computer players. You can join a game at your
+desired seat by indicating which player number you would like to be. If you
+are unlucky, this seat might be taken just as you are sending your request to
+be that player. If that's the case, you'll get an error message and be forced
+to select another seat.
+
+To join a game, send this JSON:
+
+{
+    "request": "join",
+    "player": [0-3]
+}
+
+You will get back one of these messages, depending on whether or not the join
+was successful. If response is less than 0, an error occurred and the optional
+error key will specify what type of error occurred. The payload field should
+exist in every response from the server.
+
+{
+    "response": -1,
+    "error": "JoinError",
+    "payload": "This player has already been claimed."
+}
+
+{
+    "response": 0
+    "payload": GameState
+}
+
+You can request to change your name with the following request. Name requests
+are not required to be unique. A successful name change will trigger a
+GameState update, as in the payload above.
+
+{
+    "request": "namechange",
+    "player": [0-3],
+    "name": "<name request>"
+}
+
+Every time the state of the game changes, you'll get a message above containing
+the GameState, so the client can update their internal reference. NOTE: The
+GameState is specific on a player by player basis. Each GameState is NOT
+identical.
+
+A GameState changes depending on what the state of the game is at that point in
+time. For instance, the GameState before the game starts is different from
+the GameState while the game is in progress.
+
+The GameState before the game starts looks like this:
+
+{
+    "player_num": 0,
+    "players": ["<user-supplied name>", "Computer Player 1",
+                "<user-supplied name>", "Computer Player 3"],
+    "ready_status": [true, true, false, true]
+}
+
+As soon as everybody indicates that they are ready to start, the game will
+begin. Players can indicate readiness with the following message.
+
+{
+    "request": "ready"
+    "ready": true/false
+}
+
+And after it starts:
+
+{
+    "player_num": 0,
+    "players": ["<user-supplied name>", "Computer Player 1",
+                "<user-supplied name>", "Computer Player 3"],
+    "score": [0, 0] // First 0 is even team, second 0 is odd team
+    "round": {
+        "dealer": 0, // Who is the dealer for this round
+        "round_state": "bid"/"bid2"/"play" // bid2 is if maybe_trump rejected
+        "maybe_trump": "JS", // What trump card are we bidding on?
+        "trump": null/"H", // null if trump not yet set, "<Suit>" if set
+        "turn": 0, // Who's turn is it?
+        "player_cards": [["JS", "9C", "9D", "AH"], 4, 3, 4],
+        "tricks": [{
+                "cards": ["QH", "JD", "JH", "9H"],
+                "winner": 2
+            }, {
+                "cards": [null, null, "AS", null],
+                "winner": 2 // While in progress, winner is the current winner
+            }, None, None, None]
+        }
+    }
+}
