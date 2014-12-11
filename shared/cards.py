@@ -180,8 +180,33 @@ class Trick():
 class Round():
     """A Round is a sequence of 5 tricks"""
 
-    def __init__(self):
+    def __init__(self, dealer):
+        deck = Deck()
         self.tricks = [None for x in range(5)]
+        self.hands = [deck.deal(5) for x in range(4)]
+        self.round_state = "bid"  # Other valid states: "bid2", "play"
+        self.called_trump = None  # Nobody has called trump yet
+        self.trump = None         # Initially, there is no trump
+        self.dealer = dealer      # Player num
+        self.turn = (dealer + 1) % 4  # Who starts?
+        self.maybe_trump = deck.deal(1)  # The card that might be trump
+        self.going_alone = False  # Is the player who called trump going alone?
+
+    def next_turn(self):
+        self.turn = (self.turn + 1) % 4
+
+    def set_trump(self, player, trump):
+        self.called_trump = player
+        self.trump = trump
+        self.round_state = "play"
+
+    def call_trump(self, player, trump, going_alone=False):
+        if trump is not None:
+            # TODO: Verify trump is valid
+            self.set_trump(player, trump)
+        else:
+            pass
+        #if self.round_state == "bid"
 
     def player_tricks(self, player):
         win_count = 0

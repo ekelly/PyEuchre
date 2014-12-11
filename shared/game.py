@@ -5,17 +5,35 @@ class Player():
 
     def __init__(self, _id):
         self.id = _id
+        self.partner = (_id + 2) % 4
+        self.team = _id % 2
         self.cards = Hand()
         self.score = 0
+        self.name = "Computer Player %d" % (_id + 1)
+
+    def from_human_player(self):
+        pass
+
+    def to_computer_player(self):
+        pass
+
+    def rename(self, name):
+        self.name = name
 
 
 class ComputerPlayer(Player):
 
-    def name(self):
-        return "Computer Player " + str(self.id + 1)
+    def __init__(self, _id):
+        Player.__init__(_id)
+
+    def from_human_player(self):
+        pass
 
 
 class HumanPlayer(ComputerPlayer):
+
+    def __init__(self, _id):
+        Player.__init__(self, id)
 
     def to_computer_player(self):
         pass
@@ -39,7 +57,7 @@ class Game():
         pass
 
     def start_game(self):
-        self.rounds.append(Round())
+        self.rounds.append(Round(0, ))
 
 
 class JoinError(RuntimeError):

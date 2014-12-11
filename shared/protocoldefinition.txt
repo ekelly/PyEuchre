@@ -54,10 +54,10 @@ the GameState while the game is in progress.
 The GameState before the game starts looks like this:
 
 {
-    "player_num": 0,
+    "playerNum": 0,
     "players": ["<user-supplied name>", "Computer Player 1",
                 "<user-supplied name>", "Computer Player 3"],
-    "ready_status": [true, true, false, true]
+    "readyStatus": [true, true, false, true]
 }
 
 As soon as everybody indicates that they are ready to start, the game will
@@ -71,17 +71,19 @@ begin. Players can indicate readiness with the following message.
 And after it starts:
 
 {
-    "player_num": 0,
+    "playerNum": 0,
     "players": ["<user-supplied name>", "Computer Player 1",
                 "<user-supplied name>", "Computer Player 3"],
     "score": [0, 0] // First 0 is even team, second 0 is odd team
     "round": {
         "dealer": 0, // Who is the dealer for this round
-        "round_state": "bid"/"bid2"/"play" // bid2 is if maybe_trump rejected
-        "maybe_trump": "JS", // What trump card are we bidding on?
+        "roundState": "bid"/"bid2"/"play" // bid2 is if maybe_trump rejected
+        "maybeTrump": "JS", // What trump card are we bidding on?
         "trump": null/"H", // null if trump not yet set, "<Suit>" if set
+        "calledTrump": 0, // The player who called trump
+        "goingAlone": false/true, // Is the player who called trump going alone?
         "turn": 0, // Who's turn is it?
-        "player_cards": [["JS", "9C", "9D", "AH"], 4, 3, 4],
+        "playerCards": [["JS", "9C", "9D", "AH"], 4, 3, 4],
         "tricks": [{
                 "cards": ["QH", "JD", "JH", "9H"],
                 "winner": 2
@@ -91,4 +93,11 @@ And after it starts:
             }, None, None, None]
         }
     }
+}
+
+To decide trump:
+
+{
+    "request": "trump",
+    "trump": "H"/"D"/"S"/"C"/null
 }
