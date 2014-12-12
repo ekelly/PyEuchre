@@ -276,7 +276,9 @@ class Round():
 
 class Hand():
 
-    def __init__(self, cards=[]):
+    def __init__(self, cards=None):
+        if cards is None:
+            cards = []
         self.cards = cards
 
     def add_card(self, card):
