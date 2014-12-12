@@ -1,5 +1,6 @@
 import unittest
 from shared.cards import *
+from shared.game import Trick, Hand
 
 
 class TestCards(unittest.TestCase):

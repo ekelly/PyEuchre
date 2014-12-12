@@ -77,7 +77,7 @@ And after it starts:
     "score": [0, 0] // First 0 is even team, second 0 is odd team
     "round": {
         "dealer": 0, // Who is the dealer for this round
-        "roundState": "bid"/"bid2"/"play" // bid2 is if maybe_trump rejected
+        "roundState": "bid"/"bid2"/"play"/"end" // bid2 is if maybe_trump rejected
         "maybeTrump": "JS", // What trump card are we bidding on?
         "trump": null/"H", // null if trump not yet set, "<Suit>" if set
         "calledTrump": 0, // The player who called trump
@@ -100,4 +100,12 @@ To decide trump:
 {
     "request": "trump",
     "trump": "H"/"D"/"S"/"C"/null
+}
+
+To play a card:
+
+{
+    "request": "playCard",
+    "player": [0-3]
+    "card": "JS"
 }
