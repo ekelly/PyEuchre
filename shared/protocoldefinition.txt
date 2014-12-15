@@ -85,9 +85,11 @@ And after it starts:
         "turn": 0, // Who's turn is it?
         "playerCards": [["JS", "9C", "9D", "AH"], 4, 3, 4],
         "tricks": [{
+                "initialCard": "QH",
                 "cards": ["QH", "JD", "JH", "9H"],
                 "winner": 2
             }, {
+                "initialCard": "AS",
                 "cards": [null, null, "AS", null],
                 "winner": 2 // While in progress, winner is the current winner
             }, None, None, None]

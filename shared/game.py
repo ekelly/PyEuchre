@@ -1,5 +1,6 @@
 from random import randint
 from cards import Deck
+import json
 
 MAX_SCORE = 10
 STICK_THE_DEALER = True
@@ -14,6 +15,7 @@ class Player():
         self.cards = Hand()
         self.score = 0
         self.name = "Computer Player %d" % (_id + 1)
+        self.ready = True
 
     def from_human_player(self):
         pass
@@ -24,8 +26,17 @@ class Player():
     def update(self, game_state):
         pass
 
+    def update_pregame(self, pregame_state):
+        pass
+
+    def set_readiness(self, ready):
+        pass
+
     def rename(self, name):
         self.name = name
+
+    def __str__(self):
+        return self.name
 
 
 class ComputerPlayer(Player):
@@ -40,7 +51,8 @@ class ComputerPlayer(Player):
 class HumanPlayer(ComputerPlayer):
 
     def __init__(self, _id):
-        Player.__init__(self, id)
+        Player.__init__(self, _id)
+        self.ready = False
 
     def to_computer_player(self):
         pass
@@ -49,14 +61,20 @@ class HumanPlayer(ComputerPlayer):
         """Update a human player by sending the json over sockets"""
         pass
 
+    def update_pregame(self, pregame_state):
+        pass
+
+    def set_readiness(self, ready):
+        self.ready = ready
+
 
 class Game():
 
     def __init__(self):
         self.rounds = []
-        self.players = [ComputerPlayer(_id) for _id in range(4)]
         self.scores = [0, 0]
         self.current_round = None
+        self.players = [ComputerPlayer(_id) for _id in range(4)]
 
     def join_game(self, player_num):
         if isinstance(self.players[player_num], HumanPlayer):
@@ -68,9 +86,21 @@ class Game():
     def leave_game(self, player_num):
         pass
 
-    def play_card(self, json_data):
-        if not self.game_over():
+    def call_trump(self, player, trump, going_alone=False):
+        if not self.game_over() and self.current_round.round_state == "bid" \
+                or self.current_round.round_state == "bid2":
+            # Do the thing
+            self.current_round.call_trump(player, trump, going_alone)
+
+            # Update the players
+            self.update_players()
+
+    def play_card(self, player, card):
+        if not self.game_over() and self.current_round.round_state == "play":
             # do the thing
+            self.current_round.play_card(player, card)
+
+            # Increment the turn counter
             self.current_round.next_turn()
 
             if self.current_round.round_over():
@@ -87,30 +117,68 @@ class Game():
                 dealer = self.current_round.next_player(dealer)
                 self.current_round = Round(dealer)
 
-                # Send updates to all the players
-                for player in self.players:
-                    # TODO: Figure out how to send updates
-                    pass
+            # Send updates to all the players
+            self.update_players()
+        else:
+            raise GameError("Game is over")
 
     def start_game(self):
-        dealer = randint(0, 3)
-        current_round = Round(dealer)
-        while not self.game_over():
-            while not current_round.round_over():
-                # TODO: Update players
-
-                # TODO: Wait for player response
-
-                # Increment the turn
-                current_round.next_turn()
-                pass
-            # Update the scores
-            self.scores[0] += current_round.team_score(0)
-            self.scores[1] += current_round.team_score(1)
-        self.rounds.append(Round(dealer))
+        for p in self.players:
+            if not p.ready:
+                break
+        else:
+            dealer = randint(0, 3)
+            self.rounds.append(Round(dealer))
+            self.update_players()
 
     def game_over(self):
         return self.scores[0] >= MAX_SCORE or self.scores[1] >= MAX_SCORE
+
+    def update_players(self):
+        for player in range(len(self.players)):
+            # If the game hasn't started yet
+            if self.current_round is None:
+                g = PreGameState(player, [str(p) for p in self.players],
+                            [p.ready for p in self.players])
+                self.players[player].update_pregame(g)
+            else:
+                g = PlayerGameState(player, self.current_round.clone(player),
+                               [str(p) for p in self.players], self.scores)
+                self.players[player].update(g)
+
+
+class PlayerGameState():
+
+    def __init__(self, player_num, round, players, scores):
+        self.player_num = player_num
+        self.players = players
+        self.current_round = round
+        self.scores = scores
+
+    def to_json(self):
+        j = {
+            "playerNum": self.player_num,
+            "players": self.players,
+            "round": self.current_round.to_dict(),
+            "scores": self.scores
+        }
+        return json.JSONEncoder().encode(j)
+
+
+class PreGameState():
+
+    def __init__(self, player_num, players=None, ready_status=None):
+        self.player_num = player_num
+        self.players = players
+        self.ready_status = ready_status
+
+    def to_json(self):
+        j = {
+            "playerNum": self.player_num,
+            "players": self.players,
+            "readyStatus": self.ready_status
+        }
+        return json.JSONEncoder().encode(j)
 
 
 class Trick():
@@ -164,6 +232,13 @@ class Trick():
             else:
                 return c2
 
+    def to_dict(self):
+        return {
+            "initialCard": str(self.initial_card),
+            "cards": [str(c) for c in self._cards],
+            "winner": self.trick_winner()
+        }
+
     def __str__(self):
         print str([str(c) for c in self._cards])
 
@@ -171,17 +246,50 @@ class Trick():
 class Round():
     """A Round is a sequence of 5 tricks"""
 
-    def __init__(self, dealer):
+    def __init__(self, dealer, tricks=None, hands=None, round_state=None,
+                 called_trump=None, trump=None, turn=None, maybe_trump=None,
+                 going_alone=None):
         deck = Deck()
-        self.tricks = []
-        self.hands = [Hand(deck.deal(5)) for x in range(4)]
-        self.round_state = "bid"  # Other valid states: "bid2", "play", "end"
-        self.called_trump = None  # Nobody has called trump yet
-        self.trump = None         # Initially, there is no trump
-        self.dealer = dealer      # Player num
-        self.turn = (dealer + 1) % 4  # Who starts?
-        self.maybe_trump = deck.deal(1)  # The card that might be trump
-        self.going_alone = False  # Is the player who called trump going alone?
+        self.tricks = tricks or []
+        self.hands = hands or [Hand(deck.deal(5)) for x in range(4)]
+        # Other valid states: "bid2", "play", "end"
+        self.round_state = round_state or "bid"
+        self.called_trump = called_trump or None  # Nobody has called trump yet
+        self.trump = trump or None                # Initially, there is no trump
+        self.dealer = dealer                      # Player num
+        self.turn = turn or (dealer + 1) % 4      # Who starts?
+        # The card that might be trump
+        self.maybe_trump = maybe_trump or deck.deal(1)
+        # Is the player who called trump going alone?
+        self.going_alone = going_alone or False
+
+    def clone(self, player):
+        hands = self.hands
+        if player is not None:
+            for i in range(len(hands)):
+                if i != player:
+                    hands[i] = len(hands[i])
+        return Round(dealer=self.dealer, tricks=self.tricks, hands=hands,
+                     round_state=self.round_state,
+                     called_trump=self.called_trump, trump=self.trump,
+                     turn=self.turn, maybe_trump=self.maybe_trump,
+                     going_alone=self.going_alone)
+
+    def to_dict(self):
+        hands = self.hands
+        for i in range(len(self.hands)):
+            if isinstance(self.hands[i], Hand):
+                hands[i] = self.hands[i].to_json()
+        return {
+            "tricks": self.tricks.to_dict(),
+            "hands": hands,
+            "roundState": self.round_state,
+            "calledTrump": self.called_trump,
+            "trump": self.trump,
+            "turn": self.turn,
+            "maybeTrump": str(self.maybe_trump),
+            "goingAlone": self.going_alone
+        }
 
     def next_turn(self):
         """Increment the turn counter"""
@@ -317,6 +425,9 @@ class Hand():
         else:
             return self._cards
 
+    def to_dict(self):
+        return [str(c) for c in self._cards]
+
     def __str__(self):
         hand = []
         if len(self._cards) != 0:
@@ -340,6 +451,9 @@ class JoinError(EuchreError):
 
 
 class CallTrumpError(EuchreError):
+    pass
+
+class GameError(EuchreError):
     pass
 
 
