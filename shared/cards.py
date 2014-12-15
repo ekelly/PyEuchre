@@ -13,10 +13,10 @@ Players are 0, 1, 2, 3, where the table looks like so:
 The Canonical "Suit" is one of 0, 1, 2, 3, with the numbers representing
 the suits as below.
 
-- "hearts" (3)
-- "spades" (2)
-- "diamonds" (1)
-- "clubs" (0)
+- "H" (3)
+- "S" (2)
+- "D" (1)
+- "C" (0)
 
 The Canonical "Rank" is one of [2-14], with the numbers representing the
 ranks as below.
@@ -51,6 +51,15 @@ class Card():
         """Return the string representation of the rank"""
         return Card.rank_order[self.rank - 2]
 
+    @staticmethod
+    def from_str(card_str):
+        if len(card_str) == 2 or len(card_str) == 3:
+            rank = Card.rank_order.index(card_str[0:-1]) + 2
+            suit = Card.suit_order.index(card_str[-1])
+            return Card(rank, suit)
+        else:
+            raise CardError("Not a valid Card")
+
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             return self.rank == other.rank and self.suit == other.suit
@@ -75,6 +84,15 @@ class EuchreCard(Card):
         self.effective_suit = suit
         self.effective_rank = rank
         self.trump = -1
+
+    @staticmethod
+    def from_str(card_str):
+        if len(card_str) == 2 or len(card_str) == 3:
+            rank = Card.rank_order.index(card_str[0:-1]) + 2
+            suit = Card.suit_order.index(card_str[-1])
+            return EuchreCard(rank, suit)
+        else:
+            raise CardError("Not a valid Card")
 
     def is_trump(self):
         """Is this card trump?"""
@@ -146,5 +164,9 @@ class Deck():
         for i in range(num_cards):
             dealt.append(self.__cards.pop())
         return dealt
+
+
+class CardError(RuntimeError):
+    pass
 
 __author__ = 'eric'

@@ -14,13 +14,6 @@ class TestCards(unittest.TestCase):
         self.card[3] = make_card(9, "C")
         self.card[4] = make_card("K", "S")
 
-        self.hand = Hand()
-        self.hand.add_card(self.card[0])
-        self.hand.add_card(self.card[1])
-        self.hand.add_card(self.card[2])
-        self.hand.add_card(self.card[3])
-        self.hand.add_card(self.card[4])
-
     def tearDown(self):
         self.card[0].reset_trump()
         self.card[1].reset_trump()
@@ -34,6 +27,12 @@ class TestCards(unittest.TestCase):
         self.assertEquals("JH", str(self.card[2]))
         self.assertEquals("9C", str(self.card[3]))
         self.assertEquals("KS", str(self.card[4]))
+
+        self.assertEquals(self.card[0], EuchreCard.from_str("QH"))
+        self.assertEquals(self.card[1], EuchreCard.from_str("JD"))
+        self.assertEquals(self.card[2], EuchreCard.from_str("JH"))
+        self.assertEquals(self.card[3], EuchreCard.from_str("9C"))
+        self.assertEquals(self.card[4], EuchreCard.from_str("KS"))
 
     def test_card_eq(self):
         self.assertEquals(make_card("Q", "H"), self.card[0])
@@ -93,19 +92,6 @@ class TestCards(unittest.TestCase):
         self.assertEquals(self.card[0].effective_suit, 3)
         self.assertEquals(self.card[0].effective_rank, 12)
 
-    def test_hand_sort(self):
-        expected = ["9C", "KS", "QH", "JD", "JH"]
-        # 3 is Hearts
-        self.assertEquals(expected, [str(c) for c in self.hand.sorted_hand(3)])
-        for c in self.hand.cards:
-            self.assertEquals(3, c.trump)
-
-        # 1 is diamonds
-        expected = ["KS", "QH", "9C", "JH", "JD"]
-        self.assertEquals(expected, [str(c) for c in self.hand.sorted_hand(1)])
-        for c in self.hand.cards:
-            self.assertEquals(1, c.trump)
-
     def test_trick_winner(self):
         t = Trick()
         for i in range(4):
@@ -120,13 +106,7 @@ class TestCards(unittest.TestCase):
 
 
 def make_card(rank, suit):
-    r = rank
-    s = suit
-    if isinstance(rank, basestring):
-        r = 10 + ["J", "Q", "K", "A"].index(rank) + 1
-    if isinstance(suit, basestring):
-        s = ['C', 'D', 'S', 'H'].index(suit)
-    return EuchreCard(r, s)
+    return EuchreCard.from_str(str(rank) + suit)
 
 
 if __name__ == '__main__':

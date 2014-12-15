@@ -68,7 +68,7 @@ class Game():
     def leave_game(self, player_num):
         pass
 
-    def accept_input(self, json_data):
+    def play_card(self, json_data):
         if not self.game_over():
             # do the thing
             self.current_round.next_turn()
@@ -117,26 +117,27 @@ class Trick():
 
     def __init__(self):
         self.initial_card = None
-        self.__cards = [None for x in range(4)]
+        self._cards = [None for x in range(4)]
         pass
 
     def set_player_card(self, player, card):
         """Indicate that the player played card"""
         if self.initial_card is None:
             self.initial_card = card
-        self.__cards[player] = card
+        self._cards[player] = card
 
     def trick_winner(self):
         """Assumes that all players have played a card"""
+        played_cards = filter(lambda x: x is not None, self._cards)
         follow_suit = self.initial_card.effective_suit
         current_winner = self.initial_card
-        for c in self.__cards:
+        for c in played_cards:
             current_winner = self.max(current_winner, c, follow_suit)
-        return self.__cards.index(current_winner)
+        return self._cards.index(current_winner)
 
     def trick_done(self):
-        for c in self.__cards:
-            if c is not None:
+        for c in self._cards:
+            if c is None:
                 return False
         return True
 
@@ -164,7 +165,7 @@ class Trick():
                 return c2
 
     def __str__(self):
-        print str([str(c) for c in self.__cards])
+        print str([str(c) for c in self._cards])
 
 
 class Round():
@@ -279,44 +280,53 @@ class Hand():
     def __init__(self, cards=None):
         if cards is None:
             cards = []
-        self.cards = cards
+        self._cards = cards
 
     def add_card(self, card):
         """Add a card to the hand"""
-        self.cards.append(card)
+        self._cards.append(card)
 
     def remove_card(self, card):
         """Remove a card from the hand"""
-        self.cards.remove(card)
+        self._cards.remove(card)
 
     def sorted_hand(self, trump):
-        """Side Effect: Sets trump on the entire hand"""
-        for c in self.cards:
-            c.set_trump(trump)
-        return sorted(self.cards)
+        """
+        Side Effect: Sets trump on the entire hand
+        :return: Sorted hand
+        """
+        self.set_trump(trump)
+        return sorted(self._cards)
 
-    def valid_card(self, card, suit_led):
+    def set_trump(self, trump):
+        """Sets trump on the entire hand"""
+        for c in self._cards:
+            c.set_trump(trump)
+        return self._cards
+
+    def valid_card(self, card, suit_led=None):
         """Is the card valid to play given the suit led?"""
         return suit_led is None or card in self.valid_cards(suit_led)
 
     def valid_cards(self, suit_led):
         """Return the list of valid cards"""
-        follow_suit = filter(lambda c: c.effective_suit == suit_led, self.cards)
+        follow_suit = filter(lambda c: c.effective_suit == suit_led,
+                             self._cards)
         if len(follow_suit) > 0:
             return follow_suit
         else:
-            return self.cards
+            return self._cards
 
     def __str__(self):
         hand = []
-        if len(self.cards) != 0:
-            trump = self.cards[0].trump
+        if len(self._cards) != 0:
+            trump = self._cards[0].trump
             for c in self.sorted_hand(trump):
                 hand.append(str(c))
         return str(hand)
 
     def __len__(self):
-        return len(self.cards)
+        return len(self._cards)
 
 
 class EuchreError(RuntimeError):
