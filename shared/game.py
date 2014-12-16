@@ -1,6 +1,6 @@
 from random import randint
-from cards import Deck
-from client.players import ComputerPlayer, HumanPlayer
+from cards import Deck, Hand
+from client.players import ComputerPlayer, HumanPlayer, HumanConsolePlayer
 import json
 
 MAX_SCORE = 10
@@ -13,13 +13,13 @@ class Game():
         self.rounds = []
         self.scores = [0, 0]
         self.current_round = None
-        self.players = [ComputerPlayer(_id) for _id in range(4)]
+        self.players = [ComputerPlayer(_id, self) for _id in range(4)]
 
     def join_game(self, player_num):
         if isinstance(self.players[player_num], HumanPlayer):
             raise JoinError("That player has already been claimed")
         else:
-            self.players[player_num] = HumanPlayer(player_num)
+            self.players[player_num] = HumanConsolePlayer(player_num, self)
             return True
 
     def leave_game(self, player_num):
@@ -241,8 +241,12 @@ class Round():
     def set_trump(self, player, trump):
         self.called_trump = player
         self.trump = trump
-        self.round_state = "play"
-        self.turn = self.next_player(self.dealer)
+        if self.round_state == "bid":
+            self.hands[player].add_card(self.maybe_trump)
+            self.turn = self.dealer
+        else:
+            self.round_state = "play"
+            self.turn = self.next_player(self.dealer)
 
     def verify_valid_trump(self, player, trump):
         if self.round_state == "bid":
@@ -273,6 +277,17 @@ class Round():
                         self.hands = [[] for x in range(4)]
                         self.round_state = "end"
             self.next_turn()
+
+    def exchange_trump(self, player, card):
+        if player == self.called_trump and self.round_state == "bid":
+            if card in self.hands[player]:
+                self.hands[player].remove_card(card)
+                self.round_state = "play"
+                self.turn = self.next_player(self.dealer)
+            else:
+                raise CallTrumpError("Invalid card")
+        else:
+            raise CallTrumpError("This person is not the dealer")
 
     def play_card(self, player, card):
         if player == self.turn and card in self.hands[player]:

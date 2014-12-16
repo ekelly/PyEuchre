@@ -88,8 +88,11 @@ class EuchreCard(Card):
     @staticmethod
     def from_str(card_str):
         if len(card_str) == 2 or len(card_str) == 3:
-            rank = Card.rank_order.index(card_str[0:-1]) + 2
-            suit = Card.suit_order.index(card_str[-1])
+            try:
+                rank = Card.rank_order.index(card_str[0:-1]) + 2
+                suit = Card.suit_order.index(card_str[-1])
+            except IndexError:
+                raise CardError("Invalid card")
             return EuchreCard(rank, suit)
         else:
             raise CardError("Not a valid Card")
