@@ -1,5 +1,6 @@
 from shared.cards import EuchreCard, CardError
 
+
 class Player():
 
     def __init__(self, _id, game):
@@ -45,6 +46,44 @@ class ComputerPlayer(Player):
     def from_human_player(self):
         pass
 
+    def update(self, game_state):
+        r = game_state.current_round
+        self.hand = r.hands[self.id]
+        if r.round_state == "bid":
+            if r.turn == self.id:
+                if r.trump is None:
+                    self.call_trump(r.maybe_trump)
+                else:
+                    self.exchange_card()
+        elif r.round_state == "bid2":
+            if r.turn == self.id:
+                if r.dealer != self.id:
+                    self.call_trump2(r.maybe_trump)
+                else:
+                    self.actually_call_trump2(r.maybe_trump)
+        else:
+            if r.turn == self.id:
+                print "My hand: %s" % str(self.hand)
+                self.play_card()
+
+    def play_card(self):
+        self.game.play_card(self.id, self.hand.valid_cards()[0])
+
+    def call_trump(self, maybe_trump):
+        self.game.call_trump(self.id, None)
+
+    def call_trump2(self, maybe_trump):
+        self.game.call_trump(self.id, None)
+
+    def actually_call_trump2(self, maybe_trump):
+        s = (maybe_trump.suit + 1) % 4
+        self.game.call_trump(self.id, ['C', 'D', 'S', 'H'][s])
+
+    def exchange_card(self):
+        cards = self.hand.valid_cards()
+        self.game.exchange_trump(self.id, cards[0])
+        self.hand.remove_card(cards[0])
+
 
 class HumanPlayer(Player):
 
@@ -67,7 +106,6 @@ class HumanConsolePlayer(HumanPlayer):
 
     def __init__(self, _id, game):
         HumanPlayer.__init__(self, _id, game)
-        self.ready = False
         self.players = []
 
     def update(self, game_state):

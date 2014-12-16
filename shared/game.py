@@ -122,9 +122,13 @@ class PreGameState():
 
 class Trick():
 
-    def __init__(self):
+    def __init__(self, going_alone=-1):
         self.initial_card = None
         self._cards = [None for x in range(4)]
+        if going_alone != -1:
+            self.going_along_partner = (going_alone + 2) % 4
+        else:
+            self.going_along_partner = -1
         pass
 
     def set_player_card(self, player, card):
@@ -143,8 +147,8 @@ class Trick():
         return self._cards.index(current_winner)
 
     def trick_done(self):
-        for c in self._cards:
-            if c is None:
+        for i in range(len(self._cards)):
+            if i != self.going_along_partner and self._cards[i] is None:
                 return False
         return True
 
@@ -232,7 +236,10 @@ class Round():
 
     def next_turn(self):
         """Increment the turn counter"""
-        self.turn = self.next_player(self.turn)
+        turn = self.next_player(self.turn)
+        if self.going_alone and turn == (self.called_trump + 2 % 4):
+            turn = self.next_player(turn)
+        self.turn = turn
 
     @staticmethod
     def next_player(player):
@@ -300,8 +307,12 @@ class Round():
                 current_trick.set_player_card(player, card)
                 self.hands[player].remove_card(card)
                 self.next_turn()
-        for hand in self.hands:
-            if len(hand) != 0:
+        if self.going_alone:
+            going_alone_partner = (self.called_trump + 2) % 4
+        else:
+            going_alone_partner = -1
+        for player in range(len(self.hands)):
+            if player != going_alone_partner and len(self.hands[player]) != 0:
                 break
         else:
             self.round_state = "end"
