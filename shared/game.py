@@ -1,71 +1,10 @@
 from random import randint
 from cards import Deck
+from client.players import ComputerPlayer, HumanPlayer
 import json
 
 MAX_SCORE = 10
 STICK_THE_DEALER = True
-
-
-class Player():
-
-    def __init__(self, _id):
-        self.id = _id
-        self.partner = (_id + 2) % 4
-        self.team = _id % 2
-        self.cards = Hand()
-        self.score = 0
-        self.name = "Computer Player %d" % (_id + 1)
-        self.ready = True
-
-    def from_human_player(self):
-        pass
-
-    def to_computer_player(self):
-        pass
-
-    def update(self, game_state):
-        pass
-
-    def update_pregame(self, pregame_state):
-        pass
-
-    def set_readiness(self, ready):
-        pass
-
-    def rename(self, name):
-        self.name = name
-
-    def __str__(self):
-        return self.name
-
-
-class ComputerPlayer(Player):
-
-    def __init__(self, _id):
-        Player.__init__(_id)
-
-    def from_human_player(self):
-        pass
-
-
-class HumanPlayer(ComputerPlayer):
-
-    def __init__(self, _id):
-        Player.__init__(self, _id)
-        self.ready = False
-
-    def to_computer_player(self):
-        pass
-
-    def update(self, game_state):
-        """Update a human player by sending the json over sockets"""
-        pass
-
-    def update_pregame(self, pregame_state):
-        pass
-
-    def set_readiness(self, ready):
-        self.ready = ready
 
 
 class Game():
@@ -162,7 +101,7 @@ class PlayerGameState():
             "round": self.current_round.to_dict(),
             "scores": self.scores
         }
-        return json.JSONEncoder().encode(j)
+        return json.dumps(j)
 
 
 class PreGameState():
@@ -381,63 +320,6 @@ class Round():
 
     def round_over(self):
         return self.round_state == "end"
-
-
-class Hand():
-
-    def __init__(self, cards=None):
-        if cards is None:
-            cards = []
-        self._cards = cards
-
-    def add_card(self, card):
-        """Add a card to the hand"""
-        self._cards.append(card)
-
-    def remove_card(self, card):
-        """Remove a card from the hand"""
-        self._cards.remove(card)
-
-    def sorted_hand(self, trump):
-        """
-        Side Effect: Sets trump on the entire hand
-        :return: Sorted hand
-        """
-        self.set_trump(trump)
-        return sorted(self._cards)
-
-    def set_trump(self, trump):
-        """Sets trump on the entire hand"""
-        for c in self._cards:
-            c.set_trump(trump)
-        return self._cards
-
-    def valid_card(self, card, suit_led=None):
-        """Is the card valid to play given the suit led?"""
-        return suit_led is None or card in self.valid_cards(suit_led)
-
-    def valid_cards(self, suit_led):
-        """Return the list of valid cards"""
-        follow_suit = filter(lambda c: c.effective_suit == suit_led,
-                             self._cards)
-        if len(follow_suit) > 0:
-            return follow_suit
-        else:
-            return self._cards
-
-    def to_dict(self):
-        return [str(c) for c in self._cards]
-
-    def __str__(self):
-        hand = []
-        if len(self._cards) != 0:
-            trump = self._cards[0].trump
-            for c in self.sorted_hand(trump):
-                hand.append(str(c))
-        return str(hand)
-
-    def __len__(self):
-        return len(self._cards)
 
 
 class EuchreError(RuntimeError):

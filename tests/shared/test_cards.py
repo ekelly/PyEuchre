@@ -1,6 +1,5 @@
 import unittest
 from shared.cards import *
-from shared.game import Trick, Hand
 
 
 class TestCards(unittest.TestCase):
@@ -91,18 +90,6 @@ class TestCards(unittest.TestCase):
         self.assertFalse(self.card[0].is_trump())
         self.assertEquals(self.card[0].effective_suit, 3)
         self.assertEquals(self.card[0].effective_rank, 12)
-
-    def test_trick_winner(self):
-        t = Trick()
-        for i in range(4):
-            self.card[i].set_trump(3)
-            t.set_player_card(i, self.card[i])
-        self.assertEquals(2, t.trick_winner())
-
-        for i in range(4):
-            self.card[i].set_trump(1)
-            t.set_player_card(i, self.card[i])
-        self.assertEquals(1, t.trick_winner())
 
 
 def make_card(rank, suit):

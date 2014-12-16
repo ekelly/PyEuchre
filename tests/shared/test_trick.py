@@ -42,6 +42,18 @@ class TestTrick(unittest.TestCase):
             c.set_trump(3)
         self.assertEquals(2, self.trick.trick_winner())
 
+    def test_trick_winner2(self):
+        t = Trick()
+        for i in range(4):
+            self.card[i].set_trump(3)
+            t.set_player_card(i, self.card[i])
+        self.assertEquals(2, t.trick_winner())
+
+        for i in range(4):
+            self.card[i].set_trump(1)
+            t.set_player_card(i, self.card[i])
+        self.assertEquals(1, t.trick_winner())
+
     def test_trick_done(self):
         self.trick.set_player_card(0, self.card[0])
         self.trick.set_player_card(1, self.card[1])

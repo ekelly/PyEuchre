@@ -1,6 +1,5 @@
 import unittest
-from shared.cards import EuchreCard
-from shared.game import Hand
+from shared.cards import EuchreCard, Hand
 
 
 class TestHand(unittest.TestCase):
