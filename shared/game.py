@@ -1,6 +1,6 @@
 from random import randint
 from cards import Deck, Hand
-from client.players import ComputerPlayer, HumanPlayer, HumanConsolePlayer
+from client.clients import make_human_player, make_computer_player
 import json
 
 MAX_SCORE = 10
@@ -13,17 +13,30 @@ class Game():
         self.rounds = []
         self.scores = [0, 0]
         self.current_round = None
-        self.players = [ComputerPlayer(_id, self) for _id in range(4)]
+        self.players = [make_computer_player(_id) for _id in range(4)]
+        print "initialized game"
 
     def join_game(self, player_num):
-        if isinstance(self.players[player_num], HumanPlayer):
-            raise JoinError("That player has already been claimed")
-        else:
-            self.players[player_num] = HumanConsolePlayer(player_num, self)
-            return True
+        if 0 <= player_num <= 3:
+            if self.players[player_num].human:
+                raise JoinError("That player has already been claimed")
+            else:
+                self.players[player_num] = make_human_player(player_num)
+                print "player", str(player_num), "joined game"
+                self.update_players()
+                return True
 
     def leave_game(self, player_num):
         pass
+
+    def change_name(self, player_num, new_name):
+        if 0 <= player_num <= 3:
+            self.players[player_num].rename(new_name)
+            self.update_players()
+
+    def set_readiness(self, player_num, ready):
+        if 0 <= player_num <= 3:
+            self.players[player_num].set_readiness(ready)
 
     def call_trump(self, player, trump, going_alone=False):
         if not self.game_over() and self.current_round.round_state == "bid" \
@@ -67,22 +80,24 @@ class Game():
                 break
         else:
             dealer = randint(0, 3)
-            self.rounds.append(Round(dealer))
+            self.current_round = Round(dealer)
+            self.rounds.append(self.current_round)
             self.update_players()
 
     def game_over(self):
         return self.scores[0] >= MAX_SCORE or self.scores[1] >= MAX_SCORE
 
     def update_players(self):
+        print "updating players"
         for player in range(len(self.players)):
             # If the game hasn't started yet
             if self.current_round is None:
                 g = PreGameState(player, [str(p) for p in self.players],
-                            [p.ready for p in self.players])
+                                 [p.ready for p in self.players])
                 self.players[player].update_pregame(g)
             else:
                 g = PlayerGameState(player, self.current_round.clone(player),
-                               [str(p) for p in self.players], self.scores)
+                                    [str(p) for p in self.players], self.scores)
                 self.players[player].update(g)
 
 
@@ -94,14 +109,13 @@ class PlayerGameState():
         self.current_round = round
         self.scores = scores
 
-    def to_json(self):
-        j = {
+    def to_dict(self):
+        return {
             "playerNum": self.player_num,
             "players": self.players,
             "round": self.current_round.to_dict(),
             "scores": self.scores
         }
-        return json.dumps(j)
 
 
 class PreGameState():
@@ -111,13 +125,12 @@ class PreGameState():
         self.players = players
         self.ready_status = ready_status
 
-    def to_json(self):
-        j = {
+    def to_dict(self):
+        return {
             "playerNum": self.player_num,
             "players": self.players,
             "readyStatus": self.ready_status
         }
-        return json.JSONEncoder().encode(j)
 
 
 class Trick():
@@ -202,16 +215,18 @@ class Round():
         self.dealer = dealer                      # Player num
         self.turn = turn or (dealer + 1) % 4      # Who starts?
         # The card that might be trump
-        self.maybe_trump = maybe_trump or deck.deal(1)
+        self.maybe_trump = maybe_trump or deck.deal(1)[0]
         # Is the player who called trump going alone?
         self.going_alone = going_alone or False
 
     def clone(self, player):
-        hands = self.hands
+        hands = [None for x in range(len(self.hands))]
         if player is not None:
-            for i in range(len(hands)):
+            for i in range(len(self.hands)):
                 if i != player:
-                    hands[i] = len(hands[i])
+                    hands[i] = len(self.hands[i])
+                else:
+                    hands[i] = self.hands[i]
         return Round(dealer=self.dealer, tricks=self.tricks, hands=hands,
                      round_state=self.round_state,
                      called_trump=self.called_trump, trump=self.trump,
@@ -222,9 +237,9 @@ class Round():
         hands = self.hands
         for i in range(len(self.hands)):
             if isinstance(self.hands[i], Hand):
-                hands[i] = self.hands[i].to_json()
+                hands[i] = self.hands[i].to_dict()
         return {
-            "tricks": self.tricks.to_dict(),
+            "tricks": [t.to_dict() for t in self.tricks],
             "hands": hands,
             "roundState": self.round_state,
             "calledTrump": self.called_trump,
@@ -360,6 +375,7 @@ class JoinError(EuchreError):
 
 class CallTrumpError(EuchreError):
     pass
+
 
 class GameError(EuchreError):
     pass

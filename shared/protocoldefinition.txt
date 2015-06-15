@@ -22,24 +22,24 @@ error key will specify what type of error occurred. The payload field should
 exist in every response from the server.
 
 {
-    "response": -1,
+    "response": "error",
     "error": "JoinError",
     "payload": "This player has already been claimed."
 }
 
 {
-    "response": 0
+    "response": "pregame"/"gamestate"
     "payload": GameState
 }
 
 You can request to change your name with the following request. Name requests
-are not required to be unique. A successful name change will trigger a
-GameState update, as in the payload above.
+are not required to be unique. A successful name change will trigger an
+update, as in the payload above.
 
 {
     "request": "namechange",
     "player": [0-3],
-    "name": "<name request>"
+    "payload": "<name request>"
 }
 
 Every time the state of the game changes, you'll get a message above containing
@@ -64,8 +64,9 @@ As soon as everybody indicates that they are ready to start, the game will
 begin. Players can indicate readiness with the following message.
 
 {
-    "request": "ready"
-    "ready": true/false
+    "request": "ready",
+    "player": [0-3],
+    "payload": true/false
 }
 
 And after it starts:
@@ -101,13 +102,25 @@ To decide trump:
 
 {
     "request": "trump",
-    "trump": "H"/"D"/"S"/"C"/null
+    "player": [0-3],
+    "payload": {
+        "trump": "H"/"D"/"S"/"C"/null,
+        "goingAlone": false/true
+    }
+}
+
+To discard a card if you're the dealer:
+
+{
+    "request": "discard",
+    "player": [0-3],
+    "payload": "9C"
 }
 
 To play a card:
 
 {
     "request": "playCard",
-    "player": [0-3]
-    "card": "JS"
+    "player": [0-3],
+    "payload": "JS"
 }
